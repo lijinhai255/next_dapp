@@ -117,6 +117,17 @@ export default function TransactionHistory() {
     setCurrentPage(page);
   };
 
+  // 格式化代币值，将字符串转换为 bigint
+  const formatTokenValue = (value: string): string => {
+    try {
+      // 将字符串转换为 bigint，然后使用 formatEther
+      return formatEther(BigInt(value));
+    } catch (error) {
+      console.error("格式化代币值失败:", error);
+      return "0";
+    }
+  };
+
   if (!address) {
     return <div className="text-center p-4">请连接钱包以查看交易历史</div>;
   }
@@ -172,7 +183,7 @@ export default function TransactionHistory() {
                     <div className="text-right">
                       <div className="font-medium">
                         {tx.isReceived ? "+" : "-"}
-                        {formatEther(tx.value)} MTK
+                        {formatTokenValue(tx.value)} MTK
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
                         {tx.isReceived
