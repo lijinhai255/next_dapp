@@ -39,7 +39,7 @@ export default withSentryConfig(nextConfig, {
   disableLogger: true,
   // 移除 hideSourceMaps，使用正确的配置
   sourcemaps: {
-    disable: true, // 如果您想禁用 source maps
+    disable: false, // 如果您想禁用 source maps
   },
   // 或者完全移除 sourcemaps 相关配置
 });
