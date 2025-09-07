@@ -19,14 +19,14 @@ const nextConfig: NextConfig = {
     ]
   },
   experimental: {
-    ppr: "incremental",
-    after: true,
-    cpus: 1 // 限制使用的CPU核心数，直接添加到这里
+    // 移除 ppr 配置，因为它只能在 canary 版本中使用
+    // 移除 after 配置，因为它现在默认可用
+    cpus: 1 // 限制使用的CPU核心数
   },
   devIndicators: {
-    appIsrStatus: true,
-    buildActivity: true,
-    buildActivityPosition: "bottom-right"
+    // 移除已弃用的 appIsrStatus
+    // 移除已弃用的 buildActivity
+    position: "bottom-right" // 更新为新的命名
   },
   // 添加内存限制配置
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -48,23 +48,25 @@ const nextConfig: NextConfig = {
     }
     return config
   },
-  // 禁用遥测数据收集，减少内存使用
-  telemetry: { 
-    disabled: true 
-  }
+  // 将 telemetry 配置移动到正确的位置
 }
 
-// 修复 Sentry 配置
-export default withSentryConfig(nextConfig, {
+// 禁用遥测数据收集，减少内存使用
+const sentryWebpackPluginOptions = {
   org: "inspur-5o",
   project: "yc_directory",
   silent: true,
   widenClientFileUpload: true,
   tunnelRoute: "/monitoring",
   disableLogger: true,
-  // 移除 hideSourceMaps，使用正确的配置
   sourcemaps: {
     disable: false, // 如果您想禁用 source maps
   },
-  // 或者完全移除 sourcemaps 相关配置
-});
+  // telemetry 配置应该在这里
+  telemetry: { 
+    disabled: true 
+  }
+};
+
+// 修复 Sentry 配置
+export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);
