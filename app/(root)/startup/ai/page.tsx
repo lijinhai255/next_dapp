@@ -79,6 +79,9 @@ const AI = () => {
       }
 
       let accumulatedContent = "";
+      let receivedFirstContent = false;
+      let noContentCounter = 0;
+      const MAX_NO_CONTENT_COUNT = 10; // 最大允许连续没有内容的消息数
 
       // 处理流式响应
       const processStream = async () => {
@@ -101,9 +104,60 @@ const AI = () => {
 
               try {
                 const data = JSON.parse(jsonStr);
-                if (data.choices && data.choices[0]?.delta?.content) {
-                  const contentDelta = data.choices[0].delta.content;
-                  accumulatedContent += contentDelta;
+
+                let contentToAdd = "";
+
+                // 检查各种可能的内容位置
+                if (data.choices && data.choices.length > 0) {
+                  const choice = data.choices[0];
+
+                  // 检查delta.content (OpenAI流式格式)
+                  if (choice.delta?.content) {
+                    contentToAdd = choice.delta.content;
+                  }
+                  // 检查message.content (非流式格式)
+                  else if (choice.message?.content) {
+                    contentToAdd = choice.message.content;
+                  }
+                  // 检查text (某些API的格式)
+                  else if (choice.text) {
+                    contentToAdd = choice.text;
+                  }
+                  // 检查content (直接内容)
+                  else if (choice.content) {
+                    contentToAdd = choice.content;
+                  }
+                  // 直接检查delta对象
+                  else if (choice.delta && typeof choice.delta === "object") {
+                    // 如果delta是一个对象但没有content，可能是初始消息
+                    if (
+                      Object.keys(choice.delta).length === 0 ||
+                      choice.delta.role
+                    ) {
+                      // 这是一个初始消息，不包含内容
+                      continue;
+                    }
+                  }
+                }
+
+                // 如果在choices中没找到内容，检查顶级字段
+                if (!contentToAdd) {
+                  if (data.content) {
+                    contentToAdd = data.content;
+                  } else if (data.thinking && data.thinking.content) {
+                    // 智谱AI可能在thinking字段中返回内容
+                    contentToAdd = data.thinking.content;
+                  } else if (data.response) {
+                    // 某些API可能在response字段中返回内容
+                    contentToAdd = data.response;
+                  }
+                }
+
+                // 如果有任何内容要添加
+                if (contentToAdd) {
+                  receivedFirstContent = true;
+                  noContentCounter = 0; // 重置计数器
+                  accumulatedContent += contentToAdd;
 
                   // 更新最后一条消息的内容
                   setMessages((prev) => {
@@ -112,11 +166,86 @@ const AI = () => {
                       accumulatedContent;
                     return newMessages;
                   });
+                } else {
+                  noContentCounter++;
+
+                  // 如果连续多次没有内容，并且我们还没有收到任何内容，可能需要尝试一些备用方案
+                  if (
+                    !receivedFirstContent &&
+                    noContentCounter >= MAX_NO_CONTENT_COUNT
+                  ) {
+                    // 尝试直接使用原始JSON作为内容（用于调试）
+                    const rawData = JSON.stringify(data, null, 2);
+
+                    // 更新最后一条消息的内容，显示我们收到了数据但无法解析
+                    setMessages((prev) => {
+                      const newMessages = [...prev];
+                      newMessages[newMessages.length - 1].content =
+                        "正在处理回复，请稍候...";
+                      return newMessages;
+                    });
+
+                    // 重置计数器，避免重复显示此消息
+                    noContentCounter = 0;
+                  }
                 }
               } catch (e) {
-                console.error("解析JSON失败:", e);
+                console.error("解析JSON失败:", e, "原始数据:", jsonStr);
               }
             }
+          }
+        }
+
+        // 如果处理完所有数据后仍然没有内容，显示一个友好的消息
+        if (!receivedFirstContent) {
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            newMessages[newMessages.length - 1].content =
+              "我已经收到您的问题，正在思考中...";
+            return newMessages;
+          });
+
+          // 尝试进行非流式请求作为备用方案
+          try {
+            const fallbackResponse = await fetch(
+              "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+              {
+                method: "POST",
+                headers: {
+                  Authorization:
+                    "Bearer ab4d52aa24ff4057a6eb973cdafb15b9.2CQST2tj963VrEw5",
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: "glm-4.5-flash",
+                  stream: false, // 非流式请求
+                  messages: [
+                    ...messages.map((msg) => ({
+                      role: msg.role,
+                      content: msg.content,
+                    })),
+                    { role: "user", content: userMessage },
+                  ],
+                }),
+              }
+            );
+
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json();
+              if (
+                fallbackData.choices &&
+                fallbackData.choices[0]?.message?.content
+              ) {
+                const content = fallbackData.choices[0].message.content;
+                setMessages((prev) => {
+                  const newMessages = [...prev];
+                  newMessages[newMessages.length - 1].content = content;
+                  return newMessages;
+                });
+              }
+            }
+          } catch (fallbackError) {
+            console.error("备用请求失败:", fallbackError);
           }
         }
       };

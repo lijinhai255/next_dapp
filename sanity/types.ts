@@ -41,6 +41,7 @@ export type Author = {
   _updatedAt: string;
   _rev: string;
   id?: number;
+  walletAddress?: string;
   name?: string;
   username?: string;
   email?: string;

@@ -1,9 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { auth, signOut, signIn } from "@/auth";
+import { auth, signOut } from "@/auth";
+import { WalletConnect } from "./WalletConnect";
+import { WalletAuthButton } from "./WalletAuthButton";
 
 export default async function Navbar() {
   const session = await auth();
+  console.log("session", session);
   return (
     <header className="px-5 py-3 bg-white shadow-sm font-work-sans">
       <nav className="flex justify-between items-center">
@@ -25,22 +28,17 @@ export default async function Navbar() {
                   await signOut({ redirectTo: "/" });
                 }}
               >
-                <button type="submit">Sign out</button>
+                <button type="submit" className="text-gray-600">
+                  退出登录
+                </button>
               </form>
-              <Link href={`/user/${session?.id}`}>
-                <span>{session?.user?.name}</span>
-              </Link>
+              {/* <WalletConnect /> */}
+              <WalletAuthButton />
             </>
           ) : (
             <>
-              <form
-                action={async () => {
-                  "use server";
-                  await signIn("github");
-                }}
-              >
-                <button type="submit">Login </button>
-              </form>
+              <WalletConnect />
+              <WalletAuthButton />
             </>
           )}
         </div>

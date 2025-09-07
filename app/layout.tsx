@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import 'easymde/dist/easymde.min.css'
+import "easymde/dist/easymde.min.css";
+import { RainbowKitProvider } from "@/components/providers/RainbowKitProvider";
 
 const workSans = localFont({
   src: [
@@ -66,7 +67,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={workSans.variable}>{children}</body>
+      <body className={workSans.variable}>
+        <RainbowKitProvider>{children}</RainbowKitProvider>
+      </body>
     </html>
   );
 }

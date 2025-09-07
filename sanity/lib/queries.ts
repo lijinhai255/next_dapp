@@ -49,6 +49,17 @@ export const AUTHOR_BY_GITHUB_ID_QUERY = defineQuery(`
 }
 `);
 
+export const AUTHOR_BY_WALLET_ADDRESS_QUERY = defineQuery(`
+*[_type == "author" && walletAddress == $walletAddress][0]{
+    _id,
+    walletAddress,
+    name,
+    username,
+    image,
+    bio
+}
+`);
+
 export const AUTHOR_BY_ID_QUERY = defineQuery(`
 *[_type == "author" && _id == $id][0]{
     _id,
@@ -57,7 +68,6 @@ export const AUTHOR_BY_ID_QUERY = defineQuery(`
     username,
     email,
     image,
-    
 }
 `);
 
