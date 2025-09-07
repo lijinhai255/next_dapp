@@ -20,7 +20,6 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     ppr: "incremental",
-    after: true
     after: true,
     cpus: 1 // 限制使用的CPU核心数，直接添加到这里
   },
