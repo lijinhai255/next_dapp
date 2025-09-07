@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeClient } from "@/sanity/lib/write-client";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { address: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ address: string }> }
 ) {
   try {
-    const walletAddress = params.address;
+    // 解析 params Promise
+    const resolvedParams = await params;
+    const walletAddress = resolvedParams.address;
     
     if (!walletAddress) {
       return NextResponse.json(
