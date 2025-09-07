@@ -9,7 +9,7 @@
     "lint": "next lint",
     "predev": "npm run typegen",
     "prebuild": "npm run typegen",
-    "typegen": "sanity schema extract --path=./sanity/extract.json && sanity typegen generate"
+    "typegen": "sanity schema extract --path=./sanity/extract.json && sanity typegen generate || true"
   },
   "packageManager": "npm@10.5.2",
   "overrides": {
@@ -63,8 +63,7 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   },
-  "type": "module",
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20"
   }
 }
