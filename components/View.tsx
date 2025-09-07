@@ -1,18 +1,15 @@
 import Ping from "@/components/Ping";
 import { client } from "@/sanity/lib/client";
 import { STARTUP_VIEWS_QUERY } from "@/sanity/lib/queries";
-import { writeClient } from "@/sanity/lib/write-client";
-import { unstable_after as after } from "next/server";
+import { incrementViewCount } from "@/app/actions";
+
 const View = async ({ id }: { id: string }) => {
   const { views } = await client
     .withConfig({ useCdn: false })
     .fetch(STARTUP_VIEWS_QUERY, { id });
-  after(async () => {
-    writeClient
-      .patch(id)
-      .set({ views: (views || 0) + 1 })
-      .commit();
-  });
+
+  // 调用 Server Action 来更新视图计数
+  await incrementViewCount(id, views);
 
   return (
     <div className="view-container">
