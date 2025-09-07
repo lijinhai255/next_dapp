@@ -22,6 +22,9 @@ const StartupCard = ({ post }: { post: StartupTypeCard }) => {
     description,
   } = post;
 
+  // 默认图片路径，当 image 为 undefined 时使用
+  const defaultImage = "/placeholder-image.jpg";
+
   return (
     <li className="startup-card group">
       <div className="flex-between">
@@ -43,8 +46,8 @@ const StartupCard = ({ post }: { post: StartupTypeCard }) => {
         </div>
         <Link href={`/user/${author?.id}`}>
           <Image
-            src={author?.image!}
-            alt={author?.name!}
+            src={author?.image || defaultImage}
+            alt={author?.name || "Author"}
             width={48}
             height={48}
             className="rounded-full w-10 h-10 object-cover"
@@ -54,11 +57,17 @@ const StartupCard = ({ post }: { post: StartupTypeCard }) => {
 
       <Link href={`/startup/${_id}`}>
         <p className="startup-card_desc">{description}</p>
-        <Image width={348} height={165} src={image} alt="placeholder" className="startup-card_img" />
+        <Image
+          width={348}
+          height={165}
+          src={image || defaultImage}
+          alt="placeholder"
+          className="startup-card_img"
+        />
       </Link>
 
       <div className="flex-between gap-3 mt-5">
-        <Link href={`/?query=${category?.toLowerCase()}`}>
+        <Link href={`/?query=${category?.toLowerCase() || ""}`}>
           <p className="text-16-medium">{category}</p>
         </Link>
         <Button className="startup-card_btn" asChild>
