@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+// 常见图片扩展名列表
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
+
 export const formSchema = z.object({
   title: z.string().min(3).max(100),
   description: z.string().min(20).max(500),
@@ -7,15 +10,15 @@ export const formSchema = z.object({
   link: z
     .string()
     .url()
-    .refine(async (url) => {
+    .refine((url) => {
       try {
-        const res = await fetch(url, { method: "HEAD" });
-        const contentType = res.headers.get("content-type");
-
-        return contentType?.startsWith("image/");
+        const urlObj = new URL(url);
+        const pathname = urlObj.pathname.toLowerCase();
+        // 检查 URL 是否以常见图片扩展名结尾
+        return imageExtensions.some(ext => pathname.endsWith(ext));
       } catch {
         return false;
       }
-    }),
+    }, { message: "URL must point to an image file (jpg, png, etc.)" }),
   pitch: z.string().min(10),
 });

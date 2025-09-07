@@ -15,21 +15,25 @@ export const STARTUPS_QUERY =
   image,
 }`);
 
-export const STARTUP_BY_ID_QUERY =
-  defineQuery(`*[_type == "startup" && _id == $id][0]{
-  _id, 
-  title, 
-  slug,
-  _createdAt,
-  author -> {
-    _id, name, username, image, bio
-  }, 
-  views,
-  description,
-  category,
-  image,
-  pitch,
-}`);
+// 在 sanity/lib/queries.js 中
+export const STARTUP_BY_ID_QUERY = `
+  *[_type == "startup" && _id == $id][0]{
+    _id,
+    _createdAt,
+    title,
+    description,
+    image,
+    pitch,
+    category,
+    authorWalletAddress, // 添加这一行
+    author->{
+      _id,
+      name,
+      image,
+      username
+    }
+  }
+`;
 
 export const STARTUP_VIEWS_QUERY = defineQuery(`
     *[_type == "startup" && _id == $id][0]{

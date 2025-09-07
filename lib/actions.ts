@@ -18,7 +18,7 @@ export const createPitch = async (
       status: "ERROR",
     });
 
-  const { title, description, category, link } = Object.fromEntries(
+  const { title, description, category, link, walletAddress } = Object.fromEntries(
     Array.from(form).filter(([key]) => key !== "pitch"),
   );
 
@@ -38,6 +38,7 @@ export const createPitch = async (
         _type: "reference",
         _ref: session?.id,
       },
+      authorWalletAddress: walletAddress || "", // 保存钱包地址
       pitch,
     };
 

@@ -11,12 +11,14 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createPitch } from "@/lib/actions";
+import { useAccount } from "wagmi"; // 导入 useAccount hook
 
 const StartupForm = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pitch, setPitch] = useState("");
   const { toast } = useToast();
   const router = useRouter();
+  const { address } = useAccount(); // 获取用户的钱包地址
 
   const handleFormSubmit = async (prevState: any, formData: FormData) => {
     try {
@@ -29,6 +31,18 @@ const StartupForm = () => {
       };
 
       await formSchema.parseAsync(formValues);
+
+      // 将钱包地址添加到 formData 中
+      if (address) {
+        formData.append("walletAddress", address);
+      } else {
+        toast({
+          title: "Warning",
+          description:
+            "No wallet connected. Connect your wallet to receive MIK tokens.",
+          variant: "destructive",
+        });
+      }
 
       const result = await createPitch(prevState, formData, pitch);
 
@@ -75,6 +89,18 @@ const StartupForm = () => {
     error: "",
     status: "INITIAL",
   });
+
+  // 添加钱包连接状态提示
+  const walletStatusMessage = address ? (
+    <p className="text-sm text-green-600 mt-2">
+      Wallet connected: {address.substring(0, 6)}...
+      {address.substring(address.length - 4)}
+    </p>
+  ) : (
+    <p className="text-sm text-amber-600 mt-2">
+      No wallet connected. Connect your wallet to receive MIK tokens.
+    </p>
+  );
 
   return (
     <form action={formAction} className="startup-form">
@@ -164,6 +190,12 @@ const StartupForm = () => {
         />
 
         {errors.pitch && <p className="startup-form_error">{errors.pitch}</p>}
+      </div>
+
+      {/* 显示钱包连接状态 */}
+      <div className="border p-4 rounded-lg bg-gray-50 dark:bg-gray-800 mb-4">
+        <h3 className="font-medium mb-2">Wallet Status</h3>
+        {walletStatusMessage}
       </div>
 
       <Button

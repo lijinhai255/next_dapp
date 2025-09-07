@@ -8,6 +8,7 @@ import Link from "next/link";
 import markdownit from "markdown-it";
 import { Skeleton } from "@/components/ui/skeleton";
 import View from "@/components/View";
+import SendMIKTransaction from "@/components/SendMIKTransaction";
 
 const md = markdownit();
 
@@ -18,12 +19,14 @@ interface StartupPageProps {
 }
 
 const StartupPage = async ({ params }: StartupPageProps) => {
-  const id = await params.id;
+  // 修改：移除不必要的 await
+  const id = params.id;
   const post = await client.fetch(STARTUP_BY_ID_QUERY, { id });
 
   if (!post) return notFound();
 
   const parsedContent = md.render(post?.pitch || "");
+  console.log("POST", post);
   return (
     <>
       <section className="pink_container !min-h-[230px]">
@@ -33,8 +36,8 @@ const StartupPage = async ({ params }: StartupPageProps) => {
       </section>
       <section className="section_container">
         <Image
-          width="1110"
-          height="583"
+          width={1110}
+          height={583}
           src={post.image}
           alt={post.title || "Startup image"}
           className="w-full h-auto rounded-xl "
@@ -78,6 +81,10 @@ const StartupPage = async ({ params }: StartupPageProps) => {
         <Suspense fallback={<Skeleton className="view_skeleton" />}>
           <View id={id} />
         </Suspense>
+        <SendMIKTransaction
+          recipientAddress={post.authorWalletAddress}
+          startupName={post.author.username}
+        />
       </section>
     </>
   );

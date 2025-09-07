@@ -2,8 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useAccount, useSignMessage } from "wagmi";
-import { SiweMessage } from "siwe";
-import { signIn } from "next-auth/react";
+import { getCsrfToken, signIn } from "next-auth/react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,28 +25,44 @@ export function WalletAuthButton() {
     try {
       setIsLoading(true);
 
-      // 创建随机nonce
-      const nonce = Math.floor(Math.random() * 1000000).toString();
-      // 创建SIWE消息
-      const message = new SiweMessage({
-        domain: window.location.host,
-        address,
-        statement: "登录到应用程序",
-        uri: window.location.origin,
-        version: "1",
-        chainId: 1, // 根据您的应用调整
-        nonce,
-      });
+      // 获取CSRF令牌
+      const csrfToken = await getCsrfToken();
+      if (!csrfToken) {
+        throw new Error("无法获取CSRF令牌");
+      }
 
-      // 获取要签名的消息
-      const messageToSign = message.prepareMessage();
+      // 创建日期时间字符串
+      const now = new Date();
+      const issuedAt = now.toISOString();
+
+      // 手动创建SIWE消息字符串，遵循EIP-4361格式
+      const domain = window.location.host;
+      const origin = window.location.origin;
+      const statement = "登录到应用程序";
+      const version = "1";
+      const chainId = 1;
+
+      // 直接构建符合EIP-4361标准的消息
+      const messageToSign =
+        `${domain} 想要您签名以验证您的身份\n\n` +
+        `${statement}\n\n` +
+        `URI: ${origin}\n` +
+        `版本: ${version}\n` +
+        `链ID: ${chainId}\n` +
+        `随机数: ${csrfToken}\n` +
+        `发布时间: ${issuedAt}`;
+
+      console.log("Message to sign:", messageToSign);
 
       // 请求用户签名
-      const signature = await signMessageAsync({ message: messageToSign });
+      const signature = await signMessageAsync({
+        message: messageToSign,
+      });
 
       // 发送签名到NextAuth进行验证
       const response = await signIn("credentials", {
-        message: JSON.stringify(message),
+        address: address,
+        message: messageToSign,
         signature,
         redirect: false,
       });
@@ -66,13 +81,14 @@ export function WalletAuthButton() {
         description: "您已成功登录",
       });
 
-      // 刷新页面
+      // 刷新页面或重定向
       window.location.reload();
     } catch (error) {
       console.error("登录错误:", error);
       toast({
         title: "登录失败",
-        description: "签名过程中出现错误",
+        description:
+          error instanceof Error ? error.message : "签名过程中出现错误",
         variant: "destructive",
       });
     } finally {

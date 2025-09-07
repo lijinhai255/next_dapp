@@ -13,7 +13,12 @@ const nextConfig: NextConfig = {
       {
         protocol:"http",
         hostname:"wechatapppro-1252524126.file.myqcloud.com",
-      }]
+      },
+      {
+        protocol:"https",
+        hostname:"cdn.pixabay.com",
+      },
+    ]
   } ,
   experimental: {
     ppr:"incremental",
