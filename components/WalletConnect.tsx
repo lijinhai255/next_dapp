@@ -15,7 +15,7 @@ function TokenBalanceDisplay({
   account,
   connected,
 }: {
-  account: { address?: `0x${string}` } | null;
+  account: { address?: string } | null; // 修改类型定义，接受普通的 string
   connected: boolean;
 }) {
   const mik_address = MTK_CONTRACT_ADDRESS as `0x${string}`;
@@ -35,7 +35,7 @@ function TokenBalanceDisplay({
 
   // 获取代币余额
   const { data: balanceData, refetch: refetchBalance } = useBalance({
-    address: account?.address,
+    address: account?.address ? (account.address as `0x${string}`) : undefined, // 类型转换
     token: mik_address,
     query: {
       enabled: connected && !!account?.address,
