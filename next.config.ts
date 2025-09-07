@@ -26,6 +26,34 @@ const nextConfig: NextConfig = {
     appIsrStatus: true,
     buildActivity: true,
     buildActivityPosition: "bottom-right"
+  },
+  // 添加内存限制配置
+  webpack: (config, { dev, isServer }) => {
+    // 为生产构建增加内存限制
+    if (!dev) {
+      config.optimization = {
+        ...config.optimization,
+        minimize: true,
+        // 减少并行处理，降低内存使用
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+          },
+        },
+      }
+    }
+    return config
+  },
+  // 减少构建时的并行进程数
+  experimental: {
+    ...nextConfig.experimental,
+    cpus: 1, // 限制使用的CPU核心数
+  },
+  // 禁用遥测数据收集，减少内存使用
+  telemetry: { 
+    disabled: true 
   }
 }
 
