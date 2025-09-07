@@ -1,0 +1,18 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - export NODE_OPTIONS="--max-old-space-size=8192 --max-semi-space-size=1024"
+        - npm ci --prefer-offline --no-audit --no-fund
+    build:
+      commands:
+        - export NODE_OPTIONS="--max-old-space-size=8192 --max-semi-space-size=1024"
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
