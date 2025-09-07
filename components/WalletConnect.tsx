@@ -1,174 +1,187 @@
 "use client";
 
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import Image from "next/image";
-import { MTK_CONTRACT_ADDRESS } from "../wagmi";
-import { useBalance, useReadContract } from "wagmi";
-import { erc20Abi } from "viem";
-
 import { useState, useEffect } from "react";
+import {
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useAccount,
+  useBalance,
+  useWatchContractEvent,
+} from "wagmi";
+import { parseEther } from "viem";
+import { MTK_CONTRACT_ADDRESS } from "@/wagmi";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-// 创建一个单独的组件来处理代币余额显示
-function TokenBalanceDisplay({
-  account,
-  connected,
-}: {
-  account: { address?: `0x${string}` } | null;
-  connected: boolean;
-}) {
-  const mik_address = MTK_CONTRACT_ADDRESS as `0x${string}`;
-  const [mtkBalance, setMtkBalance] = useState("0");
-  const [tokenSymbol, setTokenSymbol] = useState("MTK");
+// 扩展 ERC20 ABI，包含 transfer 函数和 Transfer 事件
+const erc20ABI = [
+  {
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    name: "transfer",
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: "from", type: "address" },
+      { indexed: true, name: "to", type: "address" },
+      { indexed: false, name: "value", type: "uint256" },
+    ],
+    name: "Transfer",
+    type: "event",
+  },
+];
 
-  // 获取代币符号
-  const { data: symbolData } = useReadContract({
-    address: mik_address,
-    abi: erc20Abi,
-    functionName: "symbol",
-    query: {
-      enabled: connected && !!account,
+interface SendMIKTransactionProps {
+  recipientAddress: string;
+  startupName: string;
+}
+
+const SendMIKTransaction = ({
+  recipientAddress,
+  startupName,
+}: SendMIKTransactionProps) => {
+  const [amount, setAmount] = useState("");
+  const { address: userAddress } = useAccount();
+  const [shouldRefreshBalance, setShouldRefreshBalance] = useState(false);
+
+  const {
+    writeContract,
+    data: hash,
+    isPending: isWritePending,
+    isError: isWriteError,
+    error: writeError,
+  } = useWriteContract();
+
+  const { isLoading: isConfirming, isSuccess: isSuccess } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
+  // 获取余额并提供刷新方法
+  const { refetch: refetchBalance } = useBalance({
+    address: userAddress,
+    token: MTK_CONTRACT_ADDRESS,
+  });
+
+  // 检查当前地址和接收地址是否相同
+  const isSameAddress =
+    userAddress?.toLowerCase() === recipientAddress?.toLowerCase();
+
+  // 监听 Transfer 事件
+  useWatchContractEvent({
+    address: MTK_CONTRACT_ADDRESS,
+    abi: erc20ABI,
+    eventName: 'Transfer',
+    onLogs(logs) {
+      // 检查事件是否与当前用户相关
+      const relevantEvents = logs.filter(log => {
+        const { from, to } = log.args;
+        return (from === userAddress || to === userAddress);
+      });
+      
+      if (relevantEvents.length > 0) {
+        console.log("检测到与用户相关的 Transfer 事件:", relevantEvents);
+        setShouldRefreshBalance(true);
+      }
     },
   });
 
-  // 获取代币余额
-  const { data: balanceData } = useBalance({
-    address: account?.address,
-    token: mik_address,
-    query: {
-      enabled: connected && !!account?.address,
-    },
-  });
-
-  // 更新代币符号
+  // 当需要刷新余额时执行
   useEffect(() => {
-    if (symbolData) {
-      setTokenSymbol(symbolData);
+    if (shouldRefreshBalance) {
+      console.log("正在刷新 MTK 余额...");
+      refetchBalance();
+      setShouldRefreshBalance(false);
     }
-  }, [symbolData]);
+  }, [shouldRefreshBalance, refetchBalance]);
 
-  // 更新代币余额
+  // 交易成功后也触发余额刷新
   useEffect(() => {
-    if (balanceData) {
-      setMtkBalance(balanceData.formatted);
-      console.log("MTK Balance:", balanceData.formatted);
+    if (isSuccess) {
+      // 延迟一小段时间后刷新余额，确保链上数据已更新
+      const timer = setTimeout(() => {
+        refetchBalance();
+      }, 2000);
+      
+      return () => clearTimeout(timer);
     }
-  }, [balanceData]);
+  }, [isSuccess, refetchBalance]);
 
-  if (!connected || !account) {
-    return null;
-  }
+  const handleSendMIK = () => {
+    if (!amount || isNaN(Number(amount)) || isSameAddress) return;
+
+    writeContract({
+      address: MTK_CONTRACT_ADDRESS,
+      abi: erc20ABI,
+      functionName: "transfer",
+      args: [recipientAddress, parseEther(amount)],
+    });
+  };
 
   return (
-    <div className="text-sm mt-2">
-      MTK 余额: {mtkBalance} {tokenSymbol}
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 mt-6">
+      <h3 className="text-xl font-bold mb-4">Support this Startup with MIK</h3>
+
+      <div className="flex flex-col space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Amount of MIK
+          </label>
+          <Input
+            type="text"
+            placeholder="Enter MIK amount"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="w-full"
+          />
+        </div>
+
+        <Button
+          onClick={handleSendMIK}
+          disabled={isWritePending || isConfirming || !amount || isSameAddress}
+          className="w-full text-white"
+        >
+          {isWritePending || isConfirming
+            ? "Processing..."
+            : isSameAddress
+              ? "Cannot send to your own address"
+              : `Send MIK to ${startupName}`}
+        </Button>
+
+        {isSameAddress && (
+          <p className="text-amber-500 text-sm">
+            You cannot send MIK to your own address.
+          </p>
+        )}
+
+        {isWriteError && (
+          <p className="text-red-500 text-sm">Error: {writeError?.message}</p>
+        )}
+
+        {isSuccess && (
+          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+            <p className="text-green-600 dark:text-green-400">
+              Transaction successful! You sent {amount} MIK.
+            </p>
+            <a
+              href={`https://etherscan.io/tx/${hash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 underline text-sm"
+            >
+              View on Etherscan
+            </a>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
 
-export function WalletConnect() {
-  return (
-    <ConnectButton.Custom>
-      {({
-        account,
-        chain,
-        openAccountModal,
-        openChainModal,
-        openConnectModal,
-        authenticationStatus,
-        mounted,
-      }) => {
-        // 注意: 如果您的应用使用服务器端渲染，这一步很重要
-        const ready = mounted && authenticationStatus !== "loading";
-        const connected =
-          ready &&
-          account &&
-          chain &&
-          (!authenticationStatus || authenticationStatus === "authenticated");
-
-        // 如果组件未准备好，显示骨架屏
-        if (!ready) {
-          return <Skeleton className="h-10 w-32" />;
-        }
-
-        return (
-          <div>
-            {(() => {
-              if (!connected) {
-                return (
-                  <Button
-                    onClick={openConnectModal}
-                    type="button"
-                    className="text-white"
-                  >
-                    连接钱包
-                  </Button>
-                );
-              }
-
-              if (chain.unsupported) {
-                return (
-                  <Button
-                    onClick={openChainModal}
-                    type="button"
-                    variant="destructive"
-                  >
-                    错误网络
-                  </Button>
-                );
-              }
-
-              return (
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={openChainModal}
-                    type="button"
-                    variant="outline"
-                    className="flex items-center gap-1"
-                  >
-                    {chain.hasIcon && (
-                      <div
-                        style={{
-                          background: chain.iconBackground,
-                          width: 16,
-                          height: 16,
-                          borderRadius: 999,
-                          overflow: "hidden",
-                        }}
-                      >
-                        {chain.iconUrl && (
-                          <Image
-                            alt={chain.name ?? "Chain icon"}
-                            src={chain.iconUrl}
-                            width="16"
-                            height="16"
-                          />
-                        )}
-                      </div>
-                    )}
-                    {chain.name}
-                  </Button>
-
-                  <Button
-                    onClick={openAccountModal}
-                    type="button"
-                    variant="outline"
-                  >
-                    {account.displayName}
-                  </Button>
-
-                  {/* 使用单独的组件来处理代币余额显示 */}
-                  <TokenBalanceDisplay
-                    account={account}
-                    connected={connected}
-                  />
-                </div>
-              );
-            })()}
-          </div>
-        );
-      }}
-    </ConnectButton.Custom>
-  );
-}
+export default SendMIKTransaction;
