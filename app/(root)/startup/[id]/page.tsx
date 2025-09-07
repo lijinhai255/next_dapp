@@ -12,15 +12,18 @@ import SendMIKTransaction from "@/components/SendMIKTransaction";
 
 const md = markdownit();
 
-interface StartupPageProps {
-  params: {
+// 修改：使用 Next.js 15 的 PageProps 类型
+interface PageProps {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-const StartupPage = async ({ params }: StartupPageProps) => {
-  // 修改：移除不必要的 await
-  const id = params.id;
+// 修改：调整组件定义以匹配 PageProps
+const StartupPage = async ({ params }: PageProps) => {
+  // 修改：等待 params Promise 解析
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
   const post = await client.fetch(STARTUP_BY_ID_QUERY, { id });
 
   if (!post) return notFound();
