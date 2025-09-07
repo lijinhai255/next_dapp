@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeClient } from "@/sanity/lib/write-client";
 
 // 定义路由参数类型
-type Params = {
+interface RouteParams {
   params: {
     address: string;
   };
-};
+}
 
 export async function GET(
-  req: NextRequest,
-  { params }: Params
+  request: NextRequest,
+  { params }: RouteParams
 ) {
   try {
     const walletAddress = params.address;
