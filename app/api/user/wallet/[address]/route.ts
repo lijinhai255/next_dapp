@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeClient } from "@/sanity/lib/write-client";
 
+// 定义路由参数类型
+type Params = {
+  params: {
+    address: string;
+  };
+};
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ address: string }> }
+  { params }: Params
 ) {
   try {
-    const resolvedParams = await params;
-    const walletAddress = resolvedParams.address;
+    const walletAddress = params.address;
     
     if (!walletAddress) {
       return NextResponse.json(
