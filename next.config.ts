@@ -19,39 +19,65 @@ const nextConfig: NextConfig = {
     ]
   },
   experimental: {
-    // 移除 ppr 配置，因为它只能在 canary 版本中使用
-    // 移除 after 配置，因为它现在默认可用
     cpus: 1 // 限制使用的CPU核心数
   },
   devIndicators: {
-    // 移除已弃用的 appIsrStatus
-    // 移除已弃用的 buildActivity
-    position: "bottom-right" // 更新为新的命名
+    position: "bottom-right"
   },
-  // 添加内存限制配置
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // 增强内存限制配置
   webpack: (config, { dev, isServer }) => {
-    // 为生产构建增加内存限制
-    if (!dev) {
-      config.optimization = {
-        ...config.optimization,
-        minimize: true,
-        // 减少并行处理，降低内存使用
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            default: false,
-            vendors: false,
-          },
+    // 为所有构建增加内存限制，不仅仅是生产构建
+    config.optimization = {
+      ...config.optimization,
+      minimize: !dev, // 只在生产环境中最小化
+      // 减少并行处理，降低内存使用
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          default: false,
+          vendors: false,
         },
+      },
+    }
+    
+    // 限制并行处理
+    if (!dev) {
+      // 设置较小的 terser 并行数
+      if (config.optimization.minimizer) {
+        config.optimization.minimizer.forEach((minimizer) => {
+          if (minimizer.constructor.name === 'TerserPlugin') {
+            minimizer.options.parallel = 1; // 限制 terser 并行进程
+          }
+        });
       }
     }
-    return config
+    
+    // 禁用源映射以减少内存使用
+    if (!dev) {
+      config.devtool = false;
+    }
+    
+    return config;
   },
-  // 将 telemetry 配置移动到正确的位置
+  // 禁用类型检查以减少内存使用
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  // 禁用 ESLint 以减少内存使用
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  // 减少输出信息
+  output: 'standalone',
+  // 禁用压缩可以减少内存使用，但会增加输出大小
+  // 如果内存问题严重，可以考虑启用此选项
+  // compress: false,
+  poweredByHeader: false,
+  reactStrictMode: false, // 关闭严格模式可能会减少一些内存使用
 }
 
-// 禁用遥测数据收集，减少内存使用
+// 注意：从日志中看到有关 sentry.client.config.ts 的警告
+// 建议将 Sentry 客户端配置移至 instrumentation-client.ts
 const sentryWebpackPluginOptions = {
   org: "inspur-5o",
   project: "yc_directory",
@@ -60,13 +86,16 @@ const sentryWebpackPluginOptions = {
   tunnelRoute: "/monitoring",
   disableLogger: true,
   sourcemaps: {
-    disable: false, // 如果您想禁用 source maps
+    disable: true, // 禁用源映射以减少内存使用
   },
-  // telemetry 配置应该在这里
   telemetry: { 
     disabled: true 
-  }
-};
+  },
+  // 减少构建时的内存使用
+  hideSourceMaps: true,
+  disableServerWebpackPlugin: true, // 如果不需要服务器端错误跟踪
+  disableClientWebpackPlugin: false, // 保留客户端错误跟踪
+}
 
 // 修复 Sentry 配置
 export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);

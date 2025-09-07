@@ -1,21 +1,11 @@
 version: 1
-applications:
-  - frontend:
-      phases:
-        preBuild:
-          commands:
-            - nvm use 20
-            - node --version
-            - npm ci
-        build:
-          commands:
-            - export NODE_OPTIONS="--max-old-space-size=4096" # 增加 Node.js 内存限制到 4GB
-            - npm run build
-      artifacts:
-        baseDirectory: .next
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - node_modules/**/*
-          - .next/cache/**/*
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - export NODE_OPTIONS="--max-old-space-size=2048" # 或更高值
+        - yarn install
+    build:
+      commands:
+        - export NODE_OPTIONS="--max-old-space-size=2048" # 或更高值
+        - yarn build
