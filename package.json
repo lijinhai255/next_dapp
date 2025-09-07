@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "predev": "npm run typegen",
-    "prebuild": "npm run typegen",
+    "prebuild": "rm -rf .next && rm -rf node_modules/.cache",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192 --gc-interval=100' next build",
+    "build:debug": "NODE_OPTIONS='--max-old-space-size=8192 --expose-gc' node --trace-warnings node_modules/.bin/next build",
     "typegen": "sanity schema extract --path=./sanity/extract.json && sanity typegen generate || true"
   },
   "packageManager": "npm@10.5.2",
