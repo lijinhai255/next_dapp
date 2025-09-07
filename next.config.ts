@@ -18,20 +18,10 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  // 移除可能导致 webpack 错误的实验性功能
-  // experimental: {
-  //   ppr: "incremental",
-  //   after: true
-  // },
-  
-  // 添加 webpack 配置来避免运行时错误
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.externals = config.externals || [];
-    }
-    return config;
+  experimental: {
+    ppr: "incremental",
+    after: true
   },
-  
   devIndicators: {
     appIsrStatus: true,
     buildActivity: true,
@@ -39,6 +29,7 @@ const nextConfig: NextConfig = {
   }
 }
 
+// 修复 Sentry 配置
 export default withSentryConfig(nextConfig, {
   org: "inspur-5o",
   project: "yc_directory",
@@ -46,5 +37,9 @@ export default withSentryConfig(nextConfig, {
   widenClientFileUpload: true,
   tunnelRoute: "/monitoring",
   disableLogger: true,
-  hideSourceMaps: true,
+  // 移除 hideSourceMaps，使用正确的配置
+  sourcemaps: {
+    disable: true, // 如果您想禁用 source maps
+  },
+  // 或者完全移除 sourcemaps 相关配置
 });
