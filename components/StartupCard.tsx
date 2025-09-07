@@ -18,7 +18,6 @@ const StartupCard = ({ post }: { post: StartupTypeCard }) => {
     title,
     category,
     _id,
-    id,
     image,
     description,
   } = post;
