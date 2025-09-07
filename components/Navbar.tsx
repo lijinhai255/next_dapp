@@ -1,8 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { WalletConnect } from "./WalletConnect";
+import { WalletConnect } from "@/components/WalletConnect";
 
-export default async function Navbar() {
+export default function Navbar() {
   return (
     <header className="px-5 py-3 bg-white shadow-sm font-work-sans">
       <nav className="flex justify-between items-center">

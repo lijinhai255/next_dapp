@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { WalletAuthButton } from "@/components/WalletAuthButton";
+import TransactionHistory from "@/components/TransactionHistory";
 
 export default function ProfilePage() {
   const { address, isConnecting } = useAccount();
@@ -87,6 +88,12 @@ export default function ProfilePage() {
             className="px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-100 rounded-md transition-all"
           >
             个人信息
+          </TabsTrigger>
+          <TabsTrigger
+            value="transactions"
+            className="px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-100 rounded-md transition-all"
+          >
+            交易记录
           </TabsTrigger>
           <TabsTrigger
             value="edit"
@@ -185,6 +192,10 @@ export default function ProfilePage() {
               <p className="text-16-medium !text-black-300">{userData.email}</p>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="transactions">
+          <TransactionHistory />
         </TabsContent>
 
         <TabsContent value="edit">
