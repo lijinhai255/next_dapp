@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
     buildActivityPosition: "bottom-right"
   },
   // 添加内存限制配置
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   webpack: (config, { dev, isServer }) => {
     // 为生产构建增加内存限制
     if (!dev) {

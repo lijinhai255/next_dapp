@@ -64,28 +64,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                         const newUser = await writeClient.create({
                             _type: "author",
-                            walletAddress,
-        name: `User ${shortAddress}`,
-        username: walletAddress.toLowerCase(),
-        image: defaultImage, // 设置默认头像
-        bio: "Web3用户", // 设置默认简介
-        _createdAt: new Date().toISOString(),
-    });
+                            name: `User ${shortAddress}`,
+                            username: walletAddress.toLowerCase(),
+                            image: defaultImage, // 设置默认头像
+                            bio: "Web3用户", // 设置默认简介
+                            _createdAt: new Date().toISOString(),
+                        });
 
-                        console.log(`创建了新用户: ${newUser._id} 钱包地址: ${walletAddress}`);
+                        console.log(`创建了新用户: ${newUser._id}`);
 
                         return {
                             id: newUser._id,
                             name: newUser.name,
-                            walletAddress,
-        image: defaultImage,
+                            image: defaultImage,
                         };
                     }
 
                     return {
                         id: existingUser._id,
                         name: existingUser.name,
-                        walletAddress,
                     };
                 } catch (error) {
                     console.error("认证错误:", error);
@@ -98,14 +95,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
-                token.walletAddress = user.walletAddress;
             }
             return token;
         },
         async session({ session, token }) {
             Object.assign(session, { 
-                id: token.id,
-                walletAddress: token.walletAddress
+                id: token.id
             });
             return session;
         },
