@@ -67,9 +67,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={workSans.variable}>
-        <RainbowKitProvider>{children}</RainbowKitProvider>
-      </body>
+      <body className={workSans.variable}>12121212</body>
     </html>
   );
 }
